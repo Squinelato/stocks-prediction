@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import re
+import os
 import sys
+import glob
 import getopt
 
 def readStocks(file_name):
@@ -27,9 +30,9 @@ def readStocks(file_name):
     
     return data
 
-def writeCsv(file_name, data):
+def writeCsv(file_name, data, write_mode):
 
-    with open(file_name, mode='w') as sample:
+    with open(file_name, mode=write_mode) as sample:
         
         sample.writelines(','.join(['TIPREG', 'DATA DO PREGAO', 'CODBDI', 'CODNEG', 'TPMERC', 'NOMRES', 
                                     'ESPECI', 'PRAZOT', 'MODREF', 'PREABE', 'PREMAX', 'PREMIN', 'PREMED', 
@@ -44,7 +47,7 @@ if __name__ == '__main__':
 
     try:
 
-        opts, args = getopt.getopt(sys.argv[1:], 'i:o:h', ['input_file_path=', 'output_file_path=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'i:d:o:h', ['input_file_path=', 'input_directory=', 'output_file_path=', 'help'])
 
     except getopt.GetoptError as err:
 
@@ -52,6 +55,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     data = list()
+    write_mode = ''
+    output_file_path = ''
+    pattern = re.compile(r'(^COTAHIST_A(19|20)\d\d\.TXT$)|(^COTAHIST_M(0[0-9]|1[012])(19|20)\d\d\.TXT$)|(^COTAHIST_D(0[1-9]|[12][0-9]|3[01])(0[0-9]|1[012])(19|20)\d\d\.TXT$)')  
 
     for opt, arg in opts:
 
@@ -60,7 +66,22 @@ if __name__ == '__main__':
             sys.exit(2)
 
         elif opt in ('-i', '--input_file_path'):
-            data = readStocks(arg)
+            write_mode = 'w'
+            data.append(readStocks(arg))
+                
+        elif opt in ('-d', '--input_directory'):
+            write_mode = 'a'
+            os.chdir('./{}/'.format(arg))
+            for file in glob.glob('*.TXT'):
+                if re.search(pattern, file):
+                    data.append(readStocks(file))
 
         elif opt in ('-o', '--output_file_path'):
-            writeCsv(arg, data)
+
+            if write_mode == 'a':
+                output_file_path = '../{}'.format(arg)
+            elif write_mode == 'w':
+                output_file_path = arg
+
+            for records in data:
+                writeCsv(output_file_path, records, write_mode)
