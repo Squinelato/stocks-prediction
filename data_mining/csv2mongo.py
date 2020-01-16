@@ -3,9 +3,16 @@
 
 import sys
 import getopt
+import numpy as np
 import pandas as pd
 from pymongo import MongoClient
 
+columns_type = {'TIPREG': np.uint8, 'CODBDI': str, 'CODNEG': str, 'TPMERC': np.uint16, 
+                'NOMRES': str, 'ESPECI': str, 'PRAZOT': str, 'MODREF': str, 'PREABE': np.float64, 
+                'PREMAX': np.float64, 'PREMIN': np.float64, 'PREMED': np.float64, 'PREULT': np.float64, 
+                'PREOFC': np.float64, 'PREOFV': np.float64, 'TOTNEG': np.uint32, 'QUATOT': np.uint64, 
+                'VOLTOT': np.float64, 'PREEXE': np.float64, 'INDOPC': np.uint8, 'FATCOT': np.int32, 
+                'PTOEXE': np.float64, 'CODISI': str, 'DISMES': np.int16}
 
 def MongoConnect(url, port, database_name, collection_name):
 
@@ -15,15 +22,21 @@ def MongoConnect(url, port, database_name, collection_name):
 
 def insertDatabase(collection, csv_path):
 
-    stocks = pd.read_csv(csv_path, parse_dates=['DATA DO PREGAO', 'DATVEN'])
-    data_dict = stocks.to_dict('records')
-    try:
-        collection.insert_many(data_dict)
-        print('importation succeeded!')
-    except Exception as ex:
-        print(ex)
-        print('importation failed\nIf you are trying a local connection,\n' + 
-              'you should start the MongoDB with: "sudo service mongod start"')
+    stocks_chunks = pd.read_csv(csv_path, parse_dates=['DATA DO PREGAO'], dtype=columns_type, 
+                                chunksize=250000)
+
+    for stocks in stocks_chunks:
+        
+        stocks['DATVEN'] = pd.to_datetime(stocks['DATVEN'], errors = 'coerce')
+        stocks['DATVEN'] = stocks['DATVEN'].fillna(pd.Timestamp.max)
+        data_dict = stocks.to_dict('records')
+        try:
+            collection.insert_many(data_dict)
+            print('chunk importation succeeded!')
+        except Exception as ex:
+            print(ex)
+            print('importation failed\nIf you are trying a local connection,\n' + 
+                'you should start the MongoDB with: "sudo service mongod start"')
 
 
 if __name__ == '__main__':
