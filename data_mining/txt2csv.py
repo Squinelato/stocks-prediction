@@ -34,10 +34,11 @@ def writeCsv(file_name, data, write_mode):
 
     with open(file_name, mode=write_mode) as sample:
         
-        sample.writelines(','.join(['TIPREG', 'DATA DO PREGAO', 'CODBDI', 'CODNEG', 'TPMERC', 'NOMRES', 
-                                    'ESPECI', 'PRAZOT', 'MODREF', 'PREABE', 'PREMAX', 'PREMIN', 'PREMED', 
-                                    'PREULT', 'PREOFC', 'PREOFV', 'TOTNEG', 'QUATOT', 'VOLTOT', 'PREEXE', 
-                                    'INDOPC', 'DATVEN', 'FATCOT', 'PTOEXE', 'CODISI', 'DISMES\n']))
+        if write_mode == 'w':
+            sample.writelines(','.join(['TIPREG', 'DATA DO PREGAO', 'CODBDI', 'CODNEG', 'TPMERC', 'NOMRES', 
+                                        'ESPECI', 'PRAZOT', 'MODREF', 'PREABE', 'PREMAX', 'PREMIN', 'PREMED', 
+                                        'PREULT', 'PREOFC', 'PREOFV', 'TOTNEG', 'QUATOT', 'VOLTOT', 'PREEXE', 
+                                        'INDOPC', 'DATVEN', 'FATCOT', 'PTOEXE', 'CODISI', 'DISMES\n']))
         
         for line in data:
             sample.writelines(line + '\n')
@@ -55,33 +56,39 @@ if __name__ == '__main__':
         sys.exit(1)
 
     data = list()
-    write_mode = ''
+    is_directory = False
     output_file_path = ''
     pattern = re.compile(r'(^COTAHIST_A(19|20)\d\d\.TXT$)|(^COTAHIST_M(0[0-9]|1[012])(19|20)\d\d\.TXT$)|(^COTAHIST_D(0[1-9]|[12][0-9]|3[01])(0[0-9]|1[012])(19|20)\d\d\.TXT$)')  
 
     for opt, arg in opts:
 
         if opt in ('-h', '--help'):
-            print('txt2csv.py -i --input_file_path -o --output_file_path [-h | --help]')
+            print('txt2csv.py -i --input_file_path -d --input_directory -o --output_file_path [-h | --help]')
             sys.exit(2)
 
         elif opt in ('-i', '--input_file_path'):
-            write_mode = 'w'
-            data.append(readStocks(arg))
+            data.append(arg)
                 
         elif opt in ('-d', '--input_directory'):
-            write_mode = 'a'
+            is_directory = True
             os.chdir('./{}/'.format(arg))
-            for file in glob.glob('*.TXT'):
-                if re.search(pattern, file):
-                    data.append(readStocks(file))
+            for file_name in glob.glob('*.TXT'):
+                if re.search(pattern, file_name):
+                    data.append(file_name)
 
         elif opt in ('-o', '--output_file_path'):
 
-            if write_mode == 'a':
+            if is_directory:
                 output_file_path = '../{}'.format(arg)
-            elif write_mode == 'w':
+            else:
                 output_file_path = arg
 
-            for records in data:
-                writeCsv(output_file_path, records, write_mode)
+            for i, file_name in enumerate(data):
+                if i == 0:
+                    record = readStocks(file_name)
+                    writeCsv(output_file_path, record, 'w')
+                    del record
+                else:
+                    record = readStocks(file_name)
+                    writeCsv(output_file_path, record, 'a')
+                    del record
