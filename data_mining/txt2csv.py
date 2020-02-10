@@ -7,6 +7,14 @@ import glob
 import getopt
 
 def readStocks(file_name):
+    """This function reads a TXT file and store it in a list
+    
+    Arguments:
+        file_name {Str} -- the name of the TXT file
+    
+    Returns:
+        list -- a list with the stocks records
+    """
 
     with open(file_name, mode='r') as sample:
         
@@ -31,6 +39,13 @@ def readStocks(file_name):
     return data
 
 def writeCsv(file_name, data, write_mode):
+    """Write out a CSV file with the stocks records
+    
+    Arguments:
+        file_name {Str} -- the name of the generated CSV file
+        data {list} -- a list containing the stocks records
+        write_mode {Str} -- the opening mode (writing, reading, etc)
+    """
 
     with open(file_name, mode=write_mode) as sample:
         

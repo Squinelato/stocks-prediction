@@ -15,12 +15,29 @@ columns_type = {'TIPREG': np.uint8, 'CODBDI': str, 'CODNEG': str, 'TPMERC': np.u
                 'PTOEXE': np.float64, 'CODISI': str, 'DISMES': np.int16}
 
 def MongoConnect(url, port, database_name, collection_name):
+    """This function can connect in a certain MongoDB collection
+    
+    Arguments:
+        url {Str} -- the database URL
+        port {Integer} -- the connection port
+        database_name {Str} -- the name of the database
+        collection_name {Str} -- the name of the collection
+    
+    Returns:
+        MongoDB Collection -- the connected collection
+    """
 
     mongo_cli = MongoClient(url, 27017)
     db = mongo_cli[database_name]
     return db[collection_name]
 
 def insertDatabase(collection, csv_path):
+    """This function imports a CSV file into a MongoDB Collection
+    
+    Arguments:
+        collection {MongoDB Collection} -- the collection whose you want to insert the data
+        csv_path {Str} -- the path of the CSV file that will be inserted into the MongoDB collection
+    """
 
     stocks_chunks = pd.read_csv(csv_path, parse_dates=['DATA DO PREGAO'], dtype=columns_type, 
                                 chunksize=250000)
